@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ai_history {
+  id           Int               @id @default(autoincrement())
+  user_id      Int
+  request_type enum_request_type
+  prompt_sent  String
+  ai_response  String
+  created_at   DateTime?         @default(now()) @db.Timestamp(6)
+  users        users             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model client_history {
+  id                                     Int      @id @default(autoincrement())
+  client_id                              Int
+  trainer_id                             Int?
+  recorded_date                          DateTime @db.Date
+  weight_kg                              Decimal? @db.Decimal(5, 2)
+  body_fat_percentage                    Decimal? @db.Decimal(4, 2)
+  client_comment                         String?
+  trainer_comment                        String?
+  users_client_history_client_idTousers  users    @relation("client_history_client_idTousers", fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_client_history_trainer_idTousers users?   @relation("client_history_trainer_idTousers", fields: [trainer_id], references: [id], onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model client_profile {
+  id                          Int         @id @default(autoincrement())
+  user_id                     Int         @unique
+  height                      Decimal?    @db.Decimal(5, 2)
+  initial_body_fat_percentage Decimal?    @db.Decimal(4, 2)
+  primary_goal                enum_goal?
+  experience_level            enum_level?
+  medical_condition           String?
+  users                       users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model exercise {
+  id                 Int                @id @default(autoincrement())
+  created_by_id      Int?
+  name               String             @db.VarChar(100)
+  description        String?
+  muscle_group       enum_muscle_group
+  equipment_required enum_equipment
+  difficulty_level   enum_level
+  users              users?             @relation(fields: [created_by_id], references: [id], onUpdate: NoAction)
+  routine_exercise   routine_exercise[]
+}
+
+model role {
+  code        String  @id @db.VarChar(4)
+  name        String  @unique @db.VarChar(50)
+  description String?
+  users       users[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model routine {
+  id                       Int                  @id @default(autoincrement())
+  trainer_id               Int
+  name                     String               @db.VarChar(100)
+  description              String?
+  goal                     enum_goal
+  difficulty_level         enum_level
+  estimated_duration_weeks Int?                 @db.SmallInt
+  users                    users                @relation(fields: [trainer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  routine_assignment       routine_assignment[]
+  routine_day              routine_day[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model routine_assignment {
+  id                                         Int                     @id @default(autoincrement())
+  routine_id                                 Int
+  client_id                                  Int
+  trainer_id                                 Int
+  start_date                                 DateTime                @db.Date
+  end_date                                   DateTime                @db.Date
+  status                                     enum_assignment_status? @default(ACTIVE)
+  users_routine_assignment_client_idTousers  users                   @relation("routine_assignment_client_idTousers", fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  routine                                    routine                 @relation(fields: [routine_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_routine_assignment_trainer_idTousers users                   @relation("routine_assignment_trainer_idTousers", fields: [trainer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workout_session                            workout_session[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model routine_day {
+  id               Int                @id @default(autoincrement())
+  routine_id       Int
+  day_name         String             @db.VarChar(100)
+  day_order        Int                @db.SmallInt
+  routine          routine            @relation(fields: [routine_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  routine_exercise routine_exercise[]
+  workout_session  workout_session[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model routine_exercise {
+  id                Int          @id @default(autoincrement())
+  routine_day_id    Int
+  exercise_id       Int
+  exercise_order    Int          @db.SmallInt
+  sets              Int          @db.SmallInt
+  min_reps          Int?         @db.SmallInt
+  max_reps          Int?         @db.SmallInt
+  target_weight_kg  Decimal?     @db.Decimal(5, 2)
+  rest_time_seconds Int?         @db.SmallInt
+  exercise          exercise     @relation(fields: [exercise_id], references: [id], onUpdate: NoAction)
+  routine_day       routine_day  @relation(fields: [routine_day_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  set_record        set_record[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model set_record {
+  id                  Int              @id @default(autoincrement())
+  session_id          Int
+  routine_exercise_id Int
+  set_number          Int              @db.SmallInt
+  reps_performed      Int              @db.SmallInt
+  weight_kg           Decimal?         @db.Decimal(5, 2)
+  completed           Boolean?         @default(true)
+  routine_exercise    routine_exercise @relation(fields: [routine_exercise_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workout_session     workout_session  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([session_id, routine_exercise_id, set_number], map: "unique_session_exercise_set")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model trainer_client {
+  trainer_id                             Int
+  client_id                              Int
+  status                                 enum_relationship_status? @default(ACTIVE)
+  assigned_at                            DateTime?                 @default(now()) @db.Timestamp(6)
+  users_trainer_client_client_idTousers  users                     @relation("trainer_client_client_idTousers", fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_trainer_client_trainer_idTousers users                     @relation("trainer_client_trainer_idTousers", fields: [trainer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([trainer_id, client_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model trainer_profile {
+  id               Int                  @id @default(autoincrement())
+  user_id          Int                  @unique
+  specialty        enum_specialty
+  biography        String?
+  years_experience Int?                 @db.SmallInt
+  phone            String?              @db.VarChar(20)
+  status           enum_trainer_status? @default(AVAILABLE)
+  users            users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model users {
+  id                                                      Int                  @id @default(autoincrement())
+  role_code                                               String               @db.VarChar(4)
+  first_name                                              String               @db.VarChar(50)
+  last_name                                               String               @db.VarChar(50)
+  email                                                   String               @unique @db.VarChar(40)
+  password_hash                                           String               @db.VarChar(255)
+  gender                                                  enum_gender?
+  birth_date                                              DateTime             @db.Date
+  profile_status                                          enum_profile_status? @default(ACTIVE)
+  created_at                                              DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at                                              DateTime?            @default(now()) @db.Timestamp(6)
+  last_login                                              DateTime?            @db.Timestamp(6)
+  ai_history                                              ai_history[]
+  client_history_client_history_client_idTousers          client_history[]     @relation("client_history_client_idTousers")
+  client_history_client_history_trainer_idTousers         client_history[]     @relation("client_history_trainer_idTousers")
+  client_profile                                          client_profile?
+  exercise                                                exercise[]
+  routine                                                 routine[]
+  routine_assignment_routine_assignment_client_idTousers  routine_assignment[] @relation("routine_assignment_client_idTousers")
+  routine_assignment_routine_assignment_trainer_idTousers routine_assignment[] @relation("routine_assignment_trainer_idTousers")
+  trainer_client_trainer_client_client_idTousers          trainer_client[]     @relation("trainer_client_client_idTousers")
+  trainer_client_trainer_client_trainer_idTousers         trainer_client[]     @relation("trainer_client_trainer_idTousers")
+  trainer_profile                                         trainer_profile?
+  role                                                    role                 @relation(fields: [role_code], references: [code], onUpdate: NoAction)
+  workout_session                                         workout_session[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model workout_session {
+  id                 Int                  @id @default(autoincrement())
+  assignment_id      Int
+  routine_day_id     Int
+  client_id          Int
+  session_date       DateTime             @db.Date
+  start_time         DateTime?            @db.Timestamp(6)
+  end_time           DateTime?            @db.Timestamp(6)
+  perceived_exertion Int?                 @db.SmallInt
+  status             enum_session_status? @default(COMPLETED)
+  notes              String?
+  set_record         set_record[]
+  routine_assignment routine_assignment   @relation(fields: [assignment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users              users                @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  routine_day        routine_day          @relation(fields: [routine_day_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+enum enum_assignment_status {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum enum_equipment {
+  DUMBBELLS
+  BARBELL
+  CABLE
+  MACHINE
+  BODYWEIGHT
+  RESISTANCE_BAND
+  WEIGHT_PLATE
+  MEDICINE_BALL
+  SUSPENSION_TRAINER
+  KETTLEBELL
+}
+
+enum enum_gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum enum_goal {
+  HYPERTROPHY
+  STRENGTH
+  FAT_LOSS
+  HEALTH
+}
+
+enum enum_level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum enum_muscle_group {
+  CHEST
+  BACK
+  QUADRICEPS
+  HAMSTRINGS
+  SHOULDERS
+  ARMS
+  CORE
+}
+
+enum enum_profile_status {
+  ACTIVE
+  INACTIVE
+  DELETED
+}
+
+enum enum_relationship_status {
+  ACTIVE
+  INACTIVE
+}
+
+enum enum_request_type {
+  GENERATE_ROUTINE
+  LOAD_RECOMMENDATION
+  GENERAL_INQUIRY
+}
+
+enum enum_session_status {
+  COMPLETED
+  SKIPPED
+  IN_PROGRESS
+}
+
+enum enum_specialty {
+  HYPERTROPHY
+  STRENGTH
+  FAT_LOSS
+  HEALTH_AND_REHABILITATION
+  GENERAL_CONDITIONING
+}
+
+enum enum_trainer_status {
+  AVAILABLE
+  BUSY
+}
