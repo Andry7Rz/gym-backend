@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const exerciseRoutes = require('./routes/exercise.routes');
+const routineRoutes = require('./routes/routine.routes');
 
 const app = express();
 
@@ -23,8 +24,10 @@ app.get('/api/health', (req, res) => {
 
 // Rutas de módulos
 app.use('/api/exercises', exerciseRoutes);
+app.use('/api/routines', routineRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
