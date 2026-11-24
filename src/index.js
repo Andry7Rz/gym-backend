@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth.routes');
 const exerciseRoutes = require('./routes/exercise.routes');
+const userRoutes = require('./routes/user.routes');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.get('/api/health', (req, res) => {
 // Rutas de módulos
 app.use('/api/auth', authRoutes);
 app.use('/api/exercises', exerciseRoutes);
+app.use('/api/users', userRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
