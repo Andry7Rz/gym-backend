@@ -3,29 +3,43 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../config/prisma');
 const { registerSchema, loginSchema } = require('../schemas/auth.schema');
 
-// REGISTRO DE USUARIO
+
+
+// registro del usuario 
+
+
+
 const register = async (req, res) => {
-  try {
+   try {
     const validation = registerSchema.safeParse(req.body);
-    if (!validation.success) {
+       if (!validation.success) {
+
+        //revision ahi, para ver el error en postman
       return res.status(400).json({
-        error: 'Datos inválidos',
+        error: 'Datos no validos',
         detalles: validation.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`),
-      });
+           });
     }
 
+
+    //cuando se valide los datos "registrados", aahora si verificar si existe
+
     const { first_name, last_name, email, password, birth_date, role_code, gender } = validation.data;
+
+
+
+
 
     // 1. Verificar si el correo ya existe en "users"
     const existingUser = await prisma.users.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ error: 'Este correo ya está registrado' });
+      return res.status(400).json({ error: 'el correo ya existe' });
     }
 
-    // 2. Encriptar contraseña
+    // Encriptar 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 3. Crear usuario
+    // 3. llamada a prisma para crear el usuario
     const newUser = await prisma.users.create({
       data: {
         first_name,
@@ -49,7 +63,7 @@ const register = async (req, res) => {
     });
 
     res.status(201).json({
-      message: 'Usuario registrado exitosamente',
+      message: 'Usuario registrado',
       user: newUser,
     });
   } catch (error) {
@@ -57,13 +71,20 @@ const register = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
+
 // INICIO DE SESIÓN (LOGIN)
 const login = async (req, res) => {
   try {
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
-        error: 'Datos inválidos',
+        error: 'Datos no validos',
         detalles: validation.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`),
       });
     }
