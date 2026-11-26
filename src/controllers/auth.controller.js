@@ -27,7 +27,7 @@ const register = async (req, res) => {
     const { first_name, last_name, email, password, birth_date, role_code, gender } = validation.data;
 
 
-
+    
 
 
     // 1. Verificar si el correo ya existe en "users"

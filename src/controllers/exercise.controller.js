@@ -40,4 +40,38 @@ const createExercise = async (req, res) => {
   }
 };
 
-module.exports = { getExercises, createExercise };
+
+// PUT /api/exercises/:id
+const updateExercise = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await prisma.exercise.update({
+      where: { id: Number(id) },
+      data: req.body,
+    });
+    res.status(200).json({ message: 'Ejercicio actualizado', exercise: updated });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Ejercicio no encontrado' });
+    }
+    res.status(500).json({ error: 'Error al actualizar ejercicio', detalle: error.message });
+  }
+};
+
+// DELETE /api/exercises/:id
+const deleteExercise = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.exercise.delete({
+      where: { id: Number(id) },
+    });
+    res.status(200).json({ message: 'Ejercicio eliminado correctamente' });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Ejercicio no encontrado' });
+    }
+    res.status(500).json({ error: 'Error al eliminar ejercicio', detalle: error.message });
+  }
+};
+
+module.exports = { getExercises, createExercise, updateExercise, deleteExercise };
