@@ -3,11 +3,7 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../config/prisma');
 const { registerSchema, loginSchema } = require('../schemas/auth.schema');
 
-
-
 // registro del usuario 
-
-
 
 const register = async (req, res) => {
    try {
