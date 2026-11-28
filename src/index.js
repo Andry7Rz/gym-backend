@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
+const assignmentRoutes = require('./routes/assignment.routes');
 const authRoutes = require('./routes/auth.routes');
 const exerciseRoutes = require('./routes/exercise.routes');
 const routineRoutes = require('./routes/routine.routes');
@@ -15,6 +16,7 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Servidor Express conectado' });
 });
 
+app.use('/api/assignments', assignmentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/exercises', exerciseRoutes);
 app.use('/api/routines', routineRoutes);
