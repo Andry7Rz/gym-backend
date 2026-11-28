@@ -5,6 +5,7 @@ require('dotenv').config();
 const assignmentRoutes = require('./routes/assignment.routes');
 const authRoutes = require('./routes/auth.routes');
 const exerciseRoutes = require('./routes/exercise.routes');
+const historyRoutes = require('./routes/history.routes');
 const routineRoutes = require('./routes/routine.routes');
 
 const app = express();
@@ -19,6 +20,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/exercises', exerciseRoutes);
+app.use('/api/history', historyRoutes);
 app.use('/api/routines', routineRoutes);
 
 const PORT = process.env.PORT || 4000;
